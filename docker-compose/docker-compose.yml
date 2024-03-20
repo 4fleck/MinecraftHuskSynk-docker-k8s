@@ -1,0 +1,171 @@
+version: '3.9'
+
+services:
+
+    velocity:
+      image: spritsail/velocity:latest
+      container_name: velocity
+      hostname: velocity
+      restart: on-failure:10
+      volumes:
+        - G:\mincraft\velocity:/config
+      ports:
+        - 25577:25577
+      environment:
+        - ONLINE_MODE=false
+      networks:
+        mine_net:
+          ipv4_address: 172.18.0.2
+      links:
+       - lobby
+       - factions
+       - minigames
+       - mysql
+       - redis
+   
+ 
+    lobby:
+      image: itzg/minecraft-server # nimmis/spigot 
+      container_name: lobby
+      hostname: lobby
+      restart: on-failure:10
+      volumes:
+        - .\mincraft_servers\lobby:/data
+        # - G:\mincraft\lobby:/minecraft
+        - .\configs\HuskSynkSrerverPlugin_conf\config.yml:/data/plugins/HuskSync/config.yml
+      ports:
+        - 30066:30066
+      environment:
+        - TYPE=SPIGOT
+        - EULA=TRUE
+        - BUILD_FROM_SOURCE=true
+        - SPIGOT_VER=1.18.2
+        - VERSION=1.18.2
+        - SERVER_PORT=30066
+        - ONLINE_MODE=false
+        - MAX_WORLD_SIZE=1024
+        - QUERY_PORT=25577
+        - ENABLE_COMMAND_BLOCK=true
+        - SNOOPER_ENABLED=false
+      links:
+      - mysql
+      - redis
+      depends_on:
+        - mysql 
+      networks:
+        mine_net:
+          ipv4_address: 172.18.0.3
+
+    factions:
+      image: itzg/minecraft-server #nimmis/spigot 
+      container_name: factions
+      hostname: factions
+      restart: on-failure:10
+      volumes:
+       - .\mincraft_servers\factions:/data
+       - .\configs\HuskSynkSrerverPlugin_conf\config.yml:/data/plugins/HuskSync/config.yml
+      ports:
+        - 30067:30067
+      environment:
+        - TYPE=SPIGOT
+        - EULA=TRUE
+        - BUILD_FROM_SOURCE=true
+        - SPIGOT_VER=1.18.2
+        - VERSION=1.18.2
+        - SERVER_PORT=30067
+        - ONLINE_MODE=false
+        - QUERY_PORT=25577
+        - ENABLE_COMMAND_BLOCK=true
+        - GENERATE_STRUCTURES=true
+        - GAMEMODE=creative
+        - SNOOPER_ENABLED=false
+        - LEVEL-TYPE=LARGEBIOMES
+      links:
+      - mysql
+      - redis
+      depends_on:
+        - mysql 
+      networks:
+        mine_net:
+          ipv4_address: 172.18.0.4
+
+
+    minigames:
+      image: itzg/minecraft-server #nimmis/spigot   
+      container_name: minigames
+      hostname: minigames
+      restart: on-failure:10
+      volumes:
+        - .\mincraft_servers\minigames:/data
+        - .\configs\HuskSynkSrerverPlugin_conf\config.yml:/data/plugins/HuskSync/config.yml
+      ports:
+        - 30068:30068
+      environment:
+        - TYPE=SPIGOT
+        - EULA=TRUE
+        - BUILD_FROM_SOURCE=true
+        - SPIGOT_VER=1.18.2
+        - VERSION=1.18.2
+        - SERVER_PORT=30068
+        - ONLINE_MODE=false
+        - QUERY_PORT=25577
+        - ALLOW_NETHER = true
+        - ENABLE_COMMAND_BLOCK=true
+        - GENERATE_STRUCTURES=true
+        - SNOOPER_ENABLED=false
+        - LEVEL-TYPE=LARGEBIOMES
+      links:
+      - mysql
+      - redis
+      depends_on:
+        - mysql 
+      networks:
+        mine_net:
+          ipv4_address: 172.18.0.5
+
+
+    redis: 
+      image: redis:alpine
+      container_name: redis
+      hostname: redis
+      volumes:
+        - .\mincraft_addons\redis\redis-data:/var/lib/redis
+        - .\mincraft_addons\redis\redis.conf:/usr/local/etc/redis/redis.conf
+      ports:
+        - 6379:6379
+      environment:
+        - REDIS_REPLICATION_MODE=master
+        # - REDIS_HOST=mysql
+        # - REDIS_PORT=3306
+        # - REDIS_PASSWORD=admin
+        # - REDIS_DATABASE=1
+      command: redis-server --requirepass admin
+      depends_on:
+        - mysql 
+      networks:
+        mine_net:
+          ipv4_address: 172.18.0.6
+
+    mysql: 
+      image: mysql:latest
+      container_name: mysql
+      hostname: mysql
+      volumes:
+        - .\mincraft_addons\mysql:/var/lib/mysql
+      environment:
+        MYSQL_ROOT_PASSWORD: examplepassword
+        MYSQL_DATABASE: mydatabase
+      ports:
+        - 3306:3306
+      networks:
+        mine_net:
+          ipv4_address: 172.18.0.7
+
+networks:
+  mine_net:
+    driver: bridge
+    ipam:
+     config:
+       - subnet: 172.18.0.0/16
+         gateway: 172.18.0.1 
+
